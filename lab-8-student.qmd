@@ -1,11 +1,16 @@
 ---
 title: "Lab 8: Searching for Efficiency"
-author: "Your name here!"
-format: html
+author: "Lisette Abundez"
+format: 
+  html:
+    code-tools: true
+    echo: true
+    code-fold: true
 editor: source
 embed-resources: true
+warning: false
+message: false
 ---
-
 ```{r}
 #| label: pacakges
 
@@ -39,11 +44,16 @@ First up, we're going to revisit Question 3 from Lab 2. This question asked:
 > What are the data types of the variables in this dataset?
 
 **1. Using `map_chr()`, produce a nicely formatted table of the data type of each variable in the `surveys` dataset.** Specifically, the table should have 15 columns, one for
-each variable, with the datatype of that variable immediately below it's name. 
+each variable, with the datatype of that variable immediately below it's name.
 
 ```{r}
 #| label: map-data-types-of-surveys
 
+surveys_types <- map_chr(surveys, ~ class(.x))
+
+tibble(data_type = surveys_types, 
+       variable_name = names(surveys_types)
+       ) 
 
 ```
 
@@ -62,6 +72,14 @@ list output back into a data frame.
 ```{r}
 #| label: map-to-mutate-columns
 
+surveys |>
+  map_at(.at = c("teacher_id",
+                 "weekday",
+                 "academic_degree",
+                 "seniority",
+                 "gender"),
+         .f = as.character) |>
+  bind_cols()
 
 ```
 
@@ -88,8 +106,77 @@ I'm using the `sen_level` classification from Challenge 3
 ```{r}
 #| label: double-pivot-for-summary-table
 
+demographics <- function(data) {
+  degree_dem <- data |> 
+    distinct(teacher_id, .keep_all = TRUE) |> 
+    count(academic_degree) |> 
+    rename(count_academic_degree = n)
+  
+  seniority_dem <- data |> 
+    distinct(teacher_id, .keep_all = TRUE) |>
+    count(seniority) |>
+    rename(count_seniority = n)
+  
+  sex_dem <- data |> 
+    distinct(teacher_id, .keep_all = TRUE) |> 
+    count(sex) |> 
+    rename(count_sex = n)
+  
+combined_counts <- bind_rows(
+    degree_dem,
+    seniority_dem,
+    sex_dem
+  )
+  
+  return(combined_counts)
+}
 
+evals_demographics <- demographics(evals)
+
+
+evals_demographics <- evals_demographics |>
+  mutate(
+    seniority_group = case_when(
+      seniority <= 4 ~ "Junior (4 years or less)",
+      seniority > 4 ~ "Senior (more than 4 years)"
+    )
+  )
+  
+long_data <- evals_demographics |>
+  pivot_longer(
+    cols = c(count_academic_degree, count_seniority, count_sex),
+    names_to = "type",
+    values_to = "count_value"
+  ) |>
+  drop_na(count_value)  |>
+  select(
+    academic_degree,
+    sex,
+    seniority_group,
+    count_value
+  ) |>
+  group_by(academic_degree, sex, seniority_group) |>
+  summarise(total_count_value = sum(count_value, na.rm = TRUE))
+
+wide_data <- long_data |>
+  pivot_wider(
+    names_from = c(academic_degree, sex, seniority_group),
+    values_from = total_count_value
+  ) |>
+  select(
+    "Female" = 'NA_female_NA',
+    "Male" = 'NA_male_NA',
+    "Junior (4 years or less)" = 'NA_NA_Junior (4 years or less)',
+    "Senior (more than 4 years)" = 'NA_NA_Senior (more than 4 years)',
+    "No Degree" = 'no_dgr_NA_NA',
+    "Masters" = 'ma_NA_NA',
+    "Doctorate" = 'dr_NA_NA',
+    "Professor" = 'prof_NA_NA',
+  ) 
+
+wide_data
 ```
+
 
 ::: {.callout-tip}
 If you are interested in exploring my table fomatting, I specifically used the 
@@ -111,5 +198,9 @@ Question 1 asked you to use `across()` to make a table which summarized:
 ```{r}
 #| label: map-missing-values-of-fish
 
+missing_values <- fish |>
+  map_int(~ sum(is.na(.)))
 
+tibble(variables = names(missing_values),
+       missing_values = missing_values)
 ```
