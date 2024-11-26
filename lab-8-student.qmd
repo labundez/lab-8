@@ -15,6 +15,9 @@ message: false
 #| label: pacakges
 
 library(tidyverse)
+library(purrr)
+library(knitr)
+library(gt)
 ```
 
 For this week's lab, we will be revisiting questions from previous lab
@@ -51,9 +54,10 @@ each variable, with the datatype of that variable immediately below it's name.
 
 surveys_types <- map_chr(surveys, ~ class(.x))
 
-tibble(data_type = surveys_types, 
-       variable_name = names(surveys_types)
-       ) 
+kable(data.frame(
+  data_type = surveys_types), 
+  col.names = c("Variable Name", "Data Type"),
+  align = "c")
 
 ```
 
@@ -72,7 +76,7 @@ list output back into a data frame.
 ```{r}
 #| label: map-to-mutate-columns
 
-surveys |>
+result <- surveys |>
   map_at(.at = c("teacher_id",
                  "weekday",
                  "academic_degree",
@@ -80,6 +84,11 @@ surveys |>
                  "gender"),
          .f = as.character) |>
   bind_cols()
+
+kable(result, col.names = gsub("[_]", " ", names(result)), 
+      align = "c") |>
+  kable_styling(font_size = 14, 
+                            position = "center")
 
 ```
 
@@ -174,7 +183,7 @@ wide_data <- long_data |>
     "Professor" = 'prof_NA_NA',
   ) 
 
-wide_data
+kable(wide_data, align = "l")
 ```
 
 
@@ -201,6 +210,7 @@ Question 1 asked you to use `across()` to make a table which summarized:
 missing_values <- fish |>
   map_int(~ sum(is.na(.)))
 
-tibble(variables = names(missing_values),
-       missing_values = missing_values)
+kable(missing_values,
+      col.names = c("Variable", "Number of Missing Values"),
+      align = "c")
 ```
