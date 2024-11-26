@@ -18,6 +18,7 @@ library(tidyverse)
 library(purrr)
 library(knitr)
 library(gt)
+library(kableExtra)
 ```
 
 For this week's lab, we will be revisiting questions from previous lab
@@ -85,13 +86,15 @@ result <- surveys |>
          .f = as.character) |>
   bind_cols()
 
-kable(result, col.names = gsub("[_]", " ", names(result)), 
+kable(result[1:20, ], col.names = gsub("[_]", " ", names(result)), 
       align = "c") |>
   kable_styling(font_size = 14, 
                             position = "center")
 
 ```
 
+Used ChatGPT to only display first 20 rows in rendered document (https://chatgpt.com/c/67458159-10b8-800e-b341-3098cb5727ba
+)
 Next up, we're going revisit Question 7 which asked:
 > What are the demographics of the instructors in this study? Investigate the
 > variables `academic_degree`, `seniority`, and `sex` and summarize your
